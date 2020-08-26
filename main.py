@@ -1,6 +1,6 @@
 credentials = {
     'username': 'username@email.com',
-    'password': 'Password123'
+    'password': 'Password'
 }
 
 baseUrl = 'https://cursos.alura.com.br/course/CURSO-AQUI'
