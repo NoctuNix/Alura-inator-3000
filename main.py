@@ -3,7 +3,8 @@ credentials = {
     'password': 'Password123'
 }
 
-baseUrl = 'https://cursos.alura.com.br/course/CURSO-AQUI'
+curso = 'CURSO-AQUI'
+baseUrl = f'https://cursos.alura.com.br/course/{curso}'
 
 baseName = baseUrl.split("/")[-1]
 
