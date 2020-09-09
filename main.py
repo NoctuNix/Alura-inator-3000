@@ -3,9 +3,14 @@ credentials = {
     'password': 'Password123'
 }
 
-baseUrl = 'https://cursos.alura.com.br/course/CURSO-AQUI'
-
-baseName = baseUrl.split("/")[-1]
+baseUrls = [
+    'https://cursos.alura.com.br/course/curso-1',
+    'https://cursos.alura.com.br/course/curso-2',
+    'https://cursos.alura.com.br/course/curso-3',
+    'https://cursos.alura.com.br/course/curso-4',
+    'https://cursos.alura.com.br/course/curso-...',
+    'https://cursos.alura.com.br/course/curso-N'
+]
 
 import os, requests, re
 from urllib.parse import urlparse
@@ -14,8 +19,8 @@ from bs4 import BeautifulSoup
 session = requests.Session()
 session.post("https://cursos.alura.com.br/signin", data=credentials)
 
-def parseHTML ():
-    r = session.get(baseUrl)
+def parseHTML (url):
+    r = session.get(url)
     html_doc = r.text
     soup = BeautifulSoup(html_doc, 'html.parser')
     return soup
@@ -23,8 +28,8 @@ def parseHTML ():
 def filterCourseSection (tag):
     return tag.has_attr('class') and len(tag['class']) and tag['class'][0] == 'courseSection-listItem'
 
-def getSections ():
-    soup = parseHTML()
+def getSections (url):
+    soup = parseHTML(url)
     sections = soup.find_all(filterCourseSection)
     return sections
 
@@ -51,7 +56,7 @@ def getSectionNameAndURL (section):
 
     return [name, url]
 
-def downloadVid (url, folderName, number):
+def downloadVid (url, path, number):
     r = session.get(f"https://cursos.alura.com.br{url}/video")
 
     if r.status_code >= 400 and r.status_code < 600:
@@ -65,51 +70,56 @@ def downloadVid (url, folderName, number):
     videoId = o.path.split("/")[3].split("-")[0]
     vid = requests.get(f"https://5-345-11111-1.b.cdn12.com/alura/{videoId}-hd.mp4?{query}")
 
-    file = open(f"./{baseName}/{folderName}/{number}.mp4", "wb")
+    file = open(f"./{path}/{number}.mp4", "wb")
     file.write(vid.content)
     file.close()
 
-sections = getSections()
+for baseUrl in baseUrls:
+    baseName = baseUrl.split("/")[-1]
 
-allSections = []
-for section in sections:
-    pair = getSectionNameAndURL(section)
-    allSections.append(pair)
+    print(f"========================\n{baseName}\n")
 
-try:
-    os.mkdir(f"./{baseName}")
-except OSError as e:
-    if e.args[0] == 183:
-        pass
+    sections = getSections(baseUrl)
 
-def sanitize (str):
-    chars = [
-        "\\", "/", "*", ":",
-        "?", '"', "<", ">", "|"
-    ]
-    for char in chars:
-        str = str.replace(char, "-")
-    return str
-
-for i in range(len(allSections)):
-    sanitizedName = sanitize(allSections[i][0])
-    name = f"{i +1}- {sanitizedName}"
-    url = allSections[i][1]
-
-    print(name, url)
+    allSections = []
+    for section in sections:
+        pair = getSectionNameAndURL(section)
+        allSections.append(pair)
 
     try:
-        os.mkdir(f"./{baseName}/{name}")
+        os.mkdir(f"./{baseName}")
     except OSError as e:
         if e.args[0] == 183:
             pass
 
-    r = session.get(url)
-    redirectUrl = r.url
+    def sanitize (str):
+        chars = [
+            "\\", "/", "*", ":",
+            "?", '"', "<", ">", "|"
+        ]
+        for char in chars:
+            str = str.replace(char, "-")
+        return str
 
-    r = session.get(redirectUrl)
-    matches = re.findall(r'href="(/course/[\w-]+/task/[0-9]+)"', r.text, re.U|re.I)
+    for i in range(len(allSections)):
+        sanitizedName = sanitize(allSections[i][0])
+        name = f"{i +1}- {sanitizedName}"
+        url = allSections[i][1]
 
-    for i in range(len(matches)):
-        print(f"{i +1}: {matches[i]}")
-        downloadVid(matches[i], name, i +1)
+        print(name, url)
+
+        try:
+            os.mkdir(f"./{baseName}/{name}")
+        except OSError as e:
+            if e.args[0] == 183:
+                pass
+
+        r = session.get(url)
+        redirectUrl = r.url
+
+        r = session.get(redirectUrl)
+        matches = re.findall(r'href="(/course/[\w-]+/task/[0-9]+)"', r.text, re.U|re.I)
+
+        for i in range(len(matches)):
+            print(f"{i +1}: {matches[i]}")
+            downloadVid(matches[i], f"{baseName}/{name}", i +1)
