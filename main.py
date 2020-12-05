@@ -68,7 +68,7 @@ def downloadVid (url, path, number):
     o = urlparse(link)
     query = o.query
     videoId = o.path.split("/")[3].split("-")[0]
-    vid = requests.get(f"https://5-345-11111-1.b.cdn12.com/alura/{videoId}-hd.mp4?{query}")
+    vid = requests.get(f"https://5-343-11111-1.b.cdn12.com/alura/{videoId}-hd.mp4?{query}")
 
     file = open(f"./{path}/{number}.mp4", "wb")
     file.write(vid.content)
