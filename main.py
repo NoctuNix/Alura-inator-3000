@@ -68,11 +68,13 @@ def downloadVid (url, path, number):
     o = urlparse(link)
     query = o.query
     videoId = o.path.split("/")[3].split("-")[0]
-    vid = requests.get(f"https://5-343-11111-1.b.cdn12.com/alura/{videoId}-hd.mp4?{query}")
+    vid = requests.get(f"https://video.alura.com.br/alura/{videoId}-hd.mp4?{query}", stream=True)
 
-    file = open(f"./{path}/{number}.mp4", "wb")
-    file.write(vid.content)
-    file.close()
+    vid.raise_for_status()
+
+    with open(f"./{path}/{number}.mp4", "wb") as file:
+        for block in vid.iter_content(1024):
+            file.write(block)
 
 for baseUrl in baseUrls:
     baseName = baseUrl.split("/")[-1]
